@@ -1,0 +1,18 @@
+import streamlit as st
+import pandas as pd
+from transformers import pipeline
+
+st.title("Customer Feedback Analyzer")
+
+uploaded_file = st.file_uploader("Upload CSV", type="csv")
+if uploaded_file:
+    df = pd.read_csv(uploaded_file)
+    st.write("Raw Data", df.head())
+
+    summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
+    classifier = pipeline("text-classification", model="distilbert-base-uncased-finetuned-sst-2-english")
+
+    df['summary'] = df['feedback_text'].apply(lambda x: summarizer(x, max_length=30, min_length=10, do_sample=False)[0]['summary_text'])
+    df['sentiment'] = df['feedback_text'].apply(lambda x: classifier(x)[0]['label'])
+
+    st.write("Analyzed Data", df[['feedback_text', 'summary', 'sentiment']])
